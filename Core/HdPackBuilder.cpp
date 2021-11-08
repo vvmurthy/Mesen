@@ -153,6 +153,10 @@ void HdPackBuilder::GenerateHdTile(HdPackTileInfo *tile)
 			hqx(hdScale, originalTile.data(), hdTile.data(), 8, 8);
 			break;
 
+		case ScaleFilterType::MMPX: 
+			mmpx_scale(hdScale, originalTile.data(), hdTile.data(), 8, 8);
+			break;
+
 		case ScaleFilterType::Prescale:
 			hdTile.clear();
 			for(uint8_t i = 0; i < 8 * hdScale; i++) {

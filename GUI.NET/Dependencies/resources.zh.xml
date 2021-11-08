@@ -66,6 +66,7 @@
 			<Control ID="mnuScale3xFilter">缩放 3 倍</Control>
 			<Control ID="mnuScale4xFilter">缩放 4 倍</Control>
 			<Control ID="mnu2xSaiFilter">2 倍 Sai</Control>
+			<Control ID="mnuMMPXFilter">预缩放 2 MNU 倍</Control>
 			<Control ID="mnuSuper2xSaiFilter">超级 2 倍 Sai</Control>
 			<Control ID="mnuPrescale2xFilter">预缩放 2 倍</Control>
 			<Control ID="mnuPrescale3xFilter">预缩放 3 倍</Control>

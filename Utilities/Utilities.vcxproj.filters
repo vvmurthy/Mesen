@@ -7,6 +7,9 @@
     <Filter Include="HQX">
       <UniqueIdentifier>{c29925fd-7698-4db8-a328-73ef7f8993a9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="MMPX">
+      <UniqueIdentifier>{c39925fd-7698-4db8-a328-73ef7f8993a9}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Scale2x">
       <UniqueIdentifier>{87329bd1-28ac-4ced-a4c2-b51777018d16}</UniqueIdentifier>
     </Filter>
@@ -106,6 +109,9 @@
     <ClInclude Include="Scale2x\scalebit.h">
       <Filter>Scale2x</Filter>
     </ClInclude>
+    <ClInclude Include="MMPX\mmpx.h">
+      <Filter>MMPX</Filter>
+    </ClInclude>
     <ClInclude Include="KreedSaiEagle\SaiEagle.h">
       <Filter>KreedSaiEagle</Filter>
     </ClInclude>
@@ -191,6 +197,9 @@
     </ClCompile>
     <ClCompile Include="HQX\init.cpp">
       <Filter>HQX</Filter>
+    </ClCompile>
+    <ClCompile Include="MMPX\mmpx.cpp">
+      <Filter>MMPX</Filter>
     </ClCompile>
     <ClCompile Include="Scale2x\scale2x.cpp">
       <Filter>Scale2x</Filter>

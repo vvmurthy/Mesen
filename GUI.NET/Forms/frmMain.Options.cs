@@ -68,6 +68,7 @@ namespace Mesen.GUI.Forms
 			mnuSuper2xSaiFilter.Checked = (filterType == VideoFilterType.Super2xSai);
 			mnuSuperEagleFilter.Checked = (filterType == VideoFilterType.SuperEagle);
 			mnuPrescale2xFilter.Checked = (filterType == VideoFilterType.Prescale2x);
+			mnuMMPXFilter.Checked = (filterType == VideoFilterType.MMPX);
 			mnuPrescale3xFilter.Checked = (filterType == VideoFilterType.Prescale3x);
 			mnuPrescale4xFilter.Checked = (filterType == VideoFilterType.Prescale4x);
 			mnuPrescale6xFilter.Checked = (filterType == VideoFilterType.Prescale6x);
@@ -329,6 +330,10 @@ namespace Mesen.GUI.Forms
 		private void mnuPrescale2xFilter_Click(object sender, EventArgs e)
 		{
 			SetVideoFilter(VideoFilterType.Prescale2x);
+		}
+		private void mnuMMPXFilter_Click(object sender, EventArgs e)
+		{
+			SetVideoFilter(VideoFilterType.MMPX);
 		}
 
 		private void mnuPrescale3xFilter_Click(object sender, EventArgs e)

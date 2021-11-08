@@ -52,7 +52,7 @@ struct TraceLoggerOptions
 class TraceLogger
 {
 private:
-	static constexpr int ExecutionLogSize = 30000;
+	static constexpr int ExecutionLogSize = 25000;
 
 	//Must be static to be thread-safe when switching game
 	static string _executionTrace;

@@ -155,6 +155,7 @@ SOURCES_CXX := $(LIBRETRO_DIR)/libretro.cpp \
                $(UTIL_DIR)/Scale2x/scale2x.cpp \
                $(UTIL_DIR)/Scale2x/scale3x.cpp \
                $(UTIL_DIR)/Scale2x/scalebit.cpp \
+               $(UTIL_DIR)/MMPX/mmpx.cpp \
                $(UTIL_DIR)/xBRZ/xbrz.cpp \
 
 

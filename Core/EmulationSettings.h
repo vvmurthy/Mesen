@@ -136,6 +136,7 @@ enum class ScaleFilterType
 	Super2xSai = 4,
 	SuperEagle = 5,
 	Prescale = 6,
+	MMPX = 7,
 };
 
 enum class VideoFilterType
@@ -166,6 +167,7 @@ enum class VideoFilterType
 	Prescale8x = 23,
 	Prescale10x = 24,
 	Raw = 25,
+	MMPX = 26,
 	HdPack = 999
 };
 

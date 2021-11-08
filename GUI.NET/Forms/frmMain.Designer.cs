@@ -126,6 +126,7 @@ namespace Mesen.GUI.Forms
 			this.mnuSuperEagleFilter = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem18 = new System.Windows.Forms.ToolStripSeparator();
 			this.mnuPrescale2xFilter = new System.Windows.Forms.ToolStripMenuItem();
+			this.mnuMMPXFilter = new System.Windows.Forms.ToolStripMenuItem();
 			this.mnuPrescale3xFilter = new System.Windows.Forms.ToolStripMenuItem();
 			this.mnuPrescale4xFilter = new System.Windows.Forms.ToolStripMenuItem();
 			this.mnuPrescale6xFilter = new System.Windows.Forms.ToolStripMenuItem();
@@ -849,6 +850,7 @@ namespace Mesen.GUI.Forms
             this.mnu2xSaiFilter,
             this.mnuSuper2xSaiFilter,
             this.mnuSuperEagleFilter,
+			this.mnuMMPXFilter,
             this.toolStripMenuItem18,
             this.mnuPrescale2xFilter,
             this.mnuPrescale3xFilter,
@@ -1025,6 +1027,14 @@ namespace Mesen.GUI.Forms
 			// 
 			this.toolStripMenuItem18.Name = "toolStripMenuItem18";
 			this.toolStripMenuItem18.Size = new System.Drawing.Size(203, 6);
+			// 
+			// mnuMMPXFilter
+			// 
+			this.mnuMMPXFilter.Name = "mnuMMPXFilter";
+			this.mnuMMPXFilter.Size = new System.Drawing.Size(206, 22);
+			this.mnuMMPXFilter.Text = "MMPX 2x";
+			this.mnuMMPXFilter.Click += new System.EventHandler(this.mnuMMPXFilter_Click);
+			
 			// 
 			// mnuPrescale2xFilter
 			// 
@@ -1967,6 +1977,7 @@ namespace Mesen.GUI.Forms
 		private Controls.ctrlLoadingRom ctrlLoading;
 		private System.Windows.Forms.ToolStripMenuItem mnuPrescale4xFilter;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem23;
+		private System.Windows.Forms.ToolStripMenuItem mnuMMPXFilter;
 		private System.Windows.Forms.ToolStripMenuItem mnuPrescale2xFilter;
 		private System.Windows.Forms.ToolStripMenuItem mnuPrescale3xFilter;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem20;

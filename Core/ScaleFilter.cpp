@@ -4,6 +4,7 @@
 #include "../Utilities/xBRZ/xbrz.h"
 #include "../Utilities/HQX/hqx.h"
 #include "../Utilities/Scale2x/scalebit.h"
+#include "../Utilities/MMPX/mmpx.h"
 #include "../Utilities/KreedSaiEagle/SaiEagle.h"
 
 bool ScaleFilter::_hqxInitDone = false;
@@ -80,6 +81,8 @@ uint32_t* ScaleFilter::ApplyFilter(uint32_t *inputArgbBuffer, uint32_t width, ui
 		supereagle_generic_xrgb8888(width, height, inputArgbBuffer, width, _outputBuffer, width * _filterScale);
 	} else if(_scaleFilterType == ScaleFilterType::Prescale) {
 		ApplyPrescaleFilter(inputArgbBuffer);
+	} else if(_scaleFilterType == ScaleFilterType::MMPX) {
+		mmpx_scale(_filterScale, inputArgbBuffer, _outputBuffer, width, height);
 	}
 
 	scanlineIntensity = 1.0 - scanlineIntensity;
@@ -122,6 +125,7 @@ shared_ptr<ScaleFilter> ScaleFilter::GetScaleFilter(VideoFilterType filter)
 		case VideoFilterType::HQ3x: scaleFilter.reset(new ScaleFilter(ScaleFilterType::HQX, 3)); break;
 		case VideoFilterType::HQ4x: scaleFilter.reset(new ScaleFilter(ScaleFilterType::HQX, 4)); break;
 		case VideoFilterType::Scale2x: scaleFilter.reset(new ScaleFilter(ScaleFilterType::Scale2x, 2)); break;
+		case VideoFilterType::MMPX: scaleFilter.reset(new ScaleFilter(ScaleFilterType::MMPX, 2)); break;
 		case VideoFilterType::Scale3x: scaleFilter.reset(new ScaleFilter(ScaleFilterType::Scale2x, 3)); break;
 		case VideoFilterType::Scale4x: scaleFilter.reset(new ScaleFilter(ScaleFilterType::Scale2x, 4)); break;
 		case VideoFilterType::_2xSai: scaleFilter.reset(new ScaleFilter(ScaleFilterType::_2xSai, 2)); break;

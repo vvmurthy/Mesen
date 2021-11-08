@@ -133,6 +133,8 @@ Utilities/$(OBJFOLDER)/%.o: Utilities/KreedSaiEagle/%.cpp
 	mkdir -p Utilities/$(OBJFOLDER) && cd Utilities/$(OBJFOLDER) && $(CPPC) $(GCCOPTIONS) -c $(patsubst Utilities/%, ../%, $<)
 Utilities/$(OBJFOLDER)/%.o: Utilities/Scale2x/%.cpp
 	mkdir -p Utilities/$(OBJFOLDER) && cd Utilities/$(OBJFOLDER) && $(CPPC) $(GCCOPTIONS) -c $(patsubst Utilities/%, ../%, $<)
+Utilities/$(OBJFOLDER)/%.o: Utilities/MMPX/%.cpp
+	mkdir -p Utilities/$(OBJFOLDER) && cd Utilities/$(OBJFOLDER) && $(CPPC) $(GCCOPTIONS) -c $(patsubst Utilities/%, ../%, $<)
 Core/$(OBJFOLDER)/%.o: Core/%.cpp
 	mkdir -p Core/$(OBJFOLDER) && cd Core/$(OBJFOLDER) && $(CPPC) $(GCCOPTIONS)  -c $(patsubst Core/%, ../%, $<)
 Linux/$(OBJFOLDER)/%.o: Linux/%.cpp

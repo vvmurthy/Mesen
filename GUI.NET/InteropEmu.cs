@@ -2325,7 +2325,8 @@ namespace Mesen.GUI
 		Super2xSai = 4,
 		SuperEagle = 5,
 		Prescale = 6,
-	}
+		MMPX = 7,
+   }
 
 	public enum VideoFilterType
 	{
@@ -2354,7 +2355,8 @@ namespace Mesen.GUI
 		Prescale6x = 22,
 		Prescale8x = 23,
 		Prescale10x = 24,
-	}
+	  MMPX = 26,
+   }
 
 	public enum VideoResizeFilter
 	{
