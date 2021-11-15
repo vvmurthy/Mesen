@@ -110,6 +110,12 @@ def write_graph_image(graph, image, filename="file.png"):
 
     cv2.imwrite(filename, output)
 
+def do_nearest_naive(im, scale):
+    output = np.zeros((im.shape[0] * scale, im.shape[1] * scale, 3), dtype=np.uint8)
+    for r in range(im.shape[0]):
+        for c in range(im.shape[1]):
+            output[r * scale : r * scale + scale, c * scale : c * scale + scale, :] = im[r, c, :]
+    return output
 
 
 def read_image():
@@ -117,6 +123,9 @@ def read_image():
     resized = cv2.resize(im, (im.shape[0] * 7, im.shape[1] * 7), 0, 0, cv2.INTER_NEAREST)
     im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
     cv2.imwrite("resized_nearest.png", resized)
+    cv2.imwrite("resized_nearest_naive.png", do_nearest_naive(im, 7))
+
+
 
     graph = np.zeros((im.shape[0], im.shape[1]), dtype=np.uint8)
 
