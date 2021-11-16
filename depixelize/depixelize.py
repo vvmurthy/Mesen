@@ -159,7 +159,7 @@ def read_image():
                 graph[r+1, c+1] = graph[r + 1 , c + 1] & ~(TOP_LEFT)
                 graph[r, c+1] = graph[r, c + 1] & ~(BOTTOM_LEFT)
     write_graph_image(graph, im)
-    construct_voronoi_templates(graph, im, 7)
+    construct_voronoi_templates(graph, im, 15)
 
 
 def construct_voronoi_templates(graph, im, scale):
@@ -199,6 +199,7 @@ def construct_voronoi_templates(graph, im, scale):
     output = np.zeros((im.shape[0] * scale + 1, im.shape[1] * scale + 1, 3), dtype=np.uint8)
     for r in range(0, im.shape[0] - 1):
         for c in range(0, im.shape[1] - 1):
+            print(str(r) + " " + str(c))
             three_by_three = np.zeros((3, 3), dtype=np.uint8)
             for i in range(3):
                 k = -1 + i
@@ -244,9 +245,6 @@ def construct_voronoi_templates(graph, im, scale):
                     magnified[:, :, chan] = im[r, c, chan]
             else:
                 # we need to evaluate this component, it is disconnected
-
-                
-
                 known = np.zeros((scale * 2 + 1, scale * 2 + 1), dtype=np.uint8) # 1 -> known, 2 -> interpolated, 3 -> edge
                 
                 # fill in known pixels
@@ -255,105 +253,88 @@ def construct_voronoi_templates(graph, im, scale):
 
                         value = three_by_three[x, y]
                         known[x * scale, y * scale] = 1
-                        for chan in range(3):
-                            magnified[x * scale , y * scale, chan] = im[r - 1 + x, c - 1 + y, chan]
+                        magnified[x * scale , y * scale, :] = im[r - 1 + x, c - 1 + y, :]
                         
                         if x > 0 and y > 0 and (value & TOP_LEFT) != 0:
                             for q in range(1, 1 + scale//2):
-                                for chan in range(3):
-                                    known[x * scale - q, y * scale - q] = 1
-                                    magnified[x * scale - q, y * scale - q, chan] = im[r - 1 + x, c - 1 + y, chan]
+                                known[x * scale - q, y * scale - q] = 1
+                                magnified[x * scale - q, y * scale - q, :] = im[r - 1 + x, c - 1 + y, :]
                             
                             # fill in central pixel color if edge exists
                             if x == 2 and y == 2:
                                 for q in range(2 + scale//2, scale + 1):
-                                    for chan in range(3):
-                                        known[x * scale - q, y * scale - q] = 1
-                                        magnified[x * scale - q, y * scale - q, chan] = im[r, c, chan]
+                                    known[x * scale - q, y * scale - q] = 1
+                                    magnified[x * scale - q, y * scale - q, :] = im[r, c, :]
                         
                         if x > 0 and (value & MID_TOP) != 0:
-                            for q in range(1, 4):
+                            for q in range(1, 1 + scale//2):
                                 known[x * scale - q, y * scale] = 1
-                                for chan in range(3):
-                                    magnified[x * scale - q, y * scale, chan] = im[r - 1 + x, c - 1 + y, chan]
+                                magnified[x * scale - q, y * scale, :] = im[r - 1 + x, c - 1 + y, :]
                             
                             if x == 2 and y == 1:
                                 for q in range(2 + scale//2, scale + 1):
                                     known[x * scale - q, y * scale] = 1
-                                    for chan in range(3):
-                                        magnified[x * scale - q, y * scale, chan] = im[r, c, chan]
+                                    magnified[x * scale - q, y * scale, :] = im[r, c, :]
 
                         if x > 0 and y < 2 and (value & TOP_RIGHT) != 0:
-                            for q in range(1, 4):
+                            for q in range(1, 1 + scale//2):
                                 known[x * scale - q, y * scale + q] = 1
-                                for chan in range(3):
-                                    magnified[x * scale - q, y * scale + q, chan] = im[r - 1 + x, c - 1 + y, chan]
+                                magnified[x * scale - q, y * scale + q, :] = im[r - 1 + x, c - 1 + y, :]
                             
                             if x == 2 and y == 0:
                                 for q in range(2 + scale//2, scale + 1):
                                     known[x * scale - q, y * scale + q] = 1
-                                    for chan in range(3):
-                                        magnified[x * scale - q, y * scale + q, chan] = im[r, c, chan]
+                                    magnified[x * scale - q, y * scale + q, :] = im[r, c, :]
 
                         if y > 0 and (value & MID_LEFT) != 0:
-                            for q in range(1, 4):
+                            for q in range(1, 1 + scale//2):
                                 known[x * scale, y * scale - q] = 1
-                                for chan in range(3):
-                                    magnified[x * scale, y * scale - q, chan] = im[r - 1 + x, c - 1 + y, chan]
+                                magnified[x * scale, y * scale - q, :] = im[r - 1 + x, c - 1 + y, :]
                             
                             if x == 1 and y == 2:
                                 for q in range(2 + scale//2, scale + 1):
                                     known[x * scale, y * scale - q] = 1
-                                    for chan in range(3):
-                                        magnified[x * scale, y * scale - q, chan] = im[r, c, chan]
+                                    magnified[x * scale, y * scale - q, :] = im[r, c, :]
 
                         if y < 2 and (value & MID_RIGHT) != 0:
-                            for q in range(1, 4):
+                            for q in range(1, 1 + scale//2):
                                 known[x * scale, y * scale + q] = 1
-                                for chan in range(3):
-                                    magnified[x * scale, y * scale + q, chan] = im[r - 1 + x, c - 1 + y, chan]
+                                magnified[x * scale, y * scale + q, :] = im[r - 1 + x, c - 1 + y, :]
 
                             if x == 1 and y == 0:
                                 for q in range(2 + scale//2, scale + 1):
                                     known[x * scale, y * scale + q] = 1
-                                    for chan in range(3):
-                                        magnified[x * scale, y * scale + q, chan] = im[r, c, chan]
+                                    magnified[x * scale, y * scale + q, :] = im[r, c, :]
 
                         if x < 2 and y > 0 and (value & BOTTOM_LEFT) != 0:
-                            for q in range(1, 4):
+                            for q in range(1, 1 + scale//2):
                                 known[x * scale + q, y * scale - q] = 1
-                                for chan in range(3):
-                                    magnified[x * scale + q, y * scale - q, chan] = im[r - 1 + x, c - 1 + y, chan]
+                                magnified[x * scale + q, y * scale - q, :] = im[r - 1 + x, c - 1 + y, :]
                             
                             if x == 0 and y == 2:
                                 for q in range(2 + scale//2, scale + 1):
                                     known[x * scale + q, y * scale - q] = 1
-                                    for chan in range(3):
-                                        magnified[x * scale + q, y * scale - q, chan] = im[r, c, chan]
+                                    magnified[x * scale + q, y * scale - q, :] = im[r, c, :]
 
                         if x < 2 and (value & BOTTOM_MID) != 0:
-                            for q in range(1, 4):
+                            for q in range(1, 1 + scale//2):
                                 known[x * scale + q, y * scale] = 1
-                                for chan in range(3):
-                                    magnified[x * scale + q, y * scale, chan] = im[r - 1 + x, c - 1 + y, chan]
+                                magnified[x * scale + q, y * scale, :] = im[r - 1 + x, c - 1 + y, :]
                             
                             if x == 0 and y == 1:
                                 for q in range(2 + scale//2, scale + 1):
                                     known[x * scale + q, y * scale] = 1
-                                    for chan in range(3):
-                                        magnified[x * scale + q, y * scale, chan] = im[r, c, chan]
+                                    magnified[x * scale + q, y * scale, :] = im[r, c, :]
 
                         if x < 2 and y < 2 and (value & BOTTOM_RIGHT) != 0:
-                            for q in range(1, 4):
+                            for q in range(1, 1 + scale//2):
                                 known[x * scale + q, y * scale + q] = 1
-                                for chan in range(3):
-                                    magnified[x * scale + q, y * scale + q, chan] = im[r - 1 + x, c - 1 + y, chan]
+                                magnified[x * scale + q, y * scale + q, :] = im[r - 1 + x, c - 1 + y, :]
 
                             if x == 0 and y == 0:
                                 for q in range(2 + scale//2, scale + 1):
                                     known[x * scale + q, y * scale + q] = 1
-                                    for chan in range(3):
-                                        magnified[x * scale + q, y * scale + q, chan] = im[r, c, chan]
+                                    magnified[x * scale + q, y * scale + q, :] = im[r, c, :]
 
                 
                 # fill all unknown pixels (will be edges, mark in known as = 3)
@@ -380,16 +361,15 @@ def construct_voronoi_templates(graph, im, scale):
                                 known[x, y] = 3
                 
                 # check visually all edges are 1px approx
-                if(np.sum(known[known == 0]) > 0):
-                    print("unknowns found " + str(index))
-                if(np.sum(known[known == 3]) > 0):
-                    print("edges found " + str(index))
+                #if(np.sum(known[known == 0]) > 0):
+                #    print("unknowns found " + str(index))
+                #if(np.sum(known[known == 3]) > 0):
+                #    print("edges found " + str(index))
                 index += 1
-                cv2.imwrite("combos/combo" +str(index) + ".png", magnified)
+                #cv2.imwrite("combos/combo" +str(index) + ".png", magnified)
             
             # write to the output
-            for chan in range(3):
-                output[r * scale : r * scale + magnified.shape[0], c * scale : c * scale + magnified.shape[0], chan] = magnified[:, :, chan]
+            output[r * scale : r * scale + magnified.shape[0], c * scale : c * scale + magnified.shape[0], :] = magnified[:, :, :]
             
                 
     cv2.imwrite("output.png", output)
