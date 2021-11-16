@@ -121,10 +121,10 @@ def do_nearest_naive(im, scale):
 def read_image():
     #im = cv2.imread("testcases/smw_yoshi_input.png")
     im = cv2.imread("testcases/win31_setup_input.png")
-    resized = cv2.resize(im, (im.shape[0] * 7, im.shape[1] * 7), 0, 0, cv2.INTER_NEAREST)
+    resized = cv2.resize(im, (im.shape[0] * 15, im.shape[1] * 15), 0, 0, cv2.INTER_NEAREST)
     im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
     cv2.imwrite("resized_nearest.png", resized)
-    cv2.imwrite("resized_nearest_naive.png", do_nearest_naive(im, 7))
+    cv2.imwrite("resized_nearest_naive.png", do_nearest_naive(im, 15))
 
 
 
@@ -162,7 +162,7 @@ def read_image():
     construct_voronoi_templates(graph, im, 15)
 
 
-def construct_voronoi_templates(graph, im, scale):
+def construct_voronoi_templates(graph, im, scale_factor):
     """
     X ----- X ---- X
     | .  .  |  . . |
@@ -183,6 +183,7 @@ def construct_voronoi_templates(graph, im, scale):
     # use  scale x scale magnification
     # centered around the center pixel this is 
     # L ---  --- C --- --- R = 3 + 12 = 15 
+    scale = 3
     orders = []
     for first in range(scale // 2 + 1):
         for second in range(scale // 2 + 1):
@@ -196,7 +197,7 @@ def construct_voronoi_templates(graph, im, scale):
 
     # do connected components of template and determine equations of each template
     index = 0
-    output = np.zeros((im.shape[0] * scale + 1, im.shape[1] * scale + 1, 3), dtype=np.uint8)
+    output = np.zeros((im.shape[0] * scale_factor + 1, im.shape[1] * scale_factor + 1, 3), dtype=np.uint8)
     for r in range(0, im.shape[0] - 1):
         for c in range(0, im.shape[1] - 1):
             print(str(r) + " " + str(c))
@@ -365,13 +366,170 @@ def construct_voronoi_templates(graph, im, scale):
                 #    print("unknowns found " + str(index))
                 #if(np.sum(known[known == 3]) > 0):
                 #    print("edges found " + str(index))
-                index += 1
-                #cv2.imwrite("combos/combo" +str(index) + ".png", magnified)
-            
-            # write to the output
-            output[r * scale : r * scale + magnified.shape[0], c * scale : c * scale + magnified.shape[0], :] = magnified[:, :, :]
-            
                 
+            # write to the output
+            # determine connected components and write image
+            all_colors = np.unique(magnified.reshape(-1, magnified.shape[2]), axis=0)
+            shapes = [] # tuple of ((color), {row: [col_min, col_max]})
+            
+            for color in all_colors:
+                color_mask = np.copy(magnified)
+                color_mask[magnified == color] = 255
+                color_mask[magnified != color] = 0
+                color_mask = color_mask[:, :, 0]
+                row_val, col_val = np.where(color_mask == 255)
+
+                DELTA = 0.1 # so we multiply the scale by 10
+                rows = {}
+                delt = 0
+                while delt <= color_mask.shape[0]:
+                    rows[delt] = set()
+                    delt += DELTA
+                    delt = round(delt, 1)
+
+                for e in range(len(row_val)):
+                    point = (row_val[e], col_val[e])
+
+                    # add all top row points or flat top points
+                    in_bounds = point[0] > 0 and point[1] > 0 and point[0] < color_mask.shape[0] - 1 and point[1] < color_mask.shape[1] - 1
+
+
+                    top_left_same = (point[0] == 0 or point[1] == 0 or color_mask[point[0] - 1, point[1] - 1] == 255)
+                    top_mid_same = (point[0] == 0 or color_mask[point[0] -1, point[1]] == 255)
+                    top_right_same = (point[0] == 0 or point[1] == color_mask.shape[1] - 1 or color_mask[point[0] - 1, point[1] + 1] == 255)
+                    
+                    mid_left_same = (point[1] == 0 or color_mask[point[0], point[1] - 1] == 255)
+                    mid_right_same = (point[1] == color_mask.shape[1] - 1  or color_mask[point[0], point[1] + 1] == 255)
+
+                    bottom_left_same = (point[0] == color_mask.shape[0] - 1  or point[1] == 0 or color_mask[point[0] + 1, point[1] - 1] == 255)
+                    bottom_mid_same = (point[0] == color_mask.shape[0] - 1  or color_mask[point[0] + 1, point[1]] == 255)
+                    bottom_right_same = (point[0] == color_mask.shape[0] - 1 or point[1] == color_mask.shape[1] - 1 or color_mask[point[0] - 1, point[1] + 1] == 255)
+
+                    if in_bounds and top_left_same and top_mid_same and top_right_same and mid_left_same and mid_right_same and bottom_left_same and bottom_mid_same and bottom_right_same:
+                        continue
+                    
+                    flat_top = (mid_right_same and mid_left_same and bottom_mid_same and bottom_left_same and bottom_right_same and not top_mid_same)
+                    
+                    flat_bottom = (mid_right_same and mid_left_same and top_mid_same and top_right_same and top_left_same and not bottom_mid_same)
+                    
+                    flat_left = (top_right_same and mid_right_same and bottom_right_same and top_mid_same and bottom_mid_same and not mid_left_same)
+                    
+                    flat_right = (top_left_same and mid_left_same and bottom_left_same and top_mid_same and bottom_mid_same and not mid_right_same)
+                    
+                    # top left, bottom right -> all same color
+                    # bottom left, top right -> different colors
+                    diag_down = ( (point[0] == 0 or point[1] == 0) or (in_bounds and color_mask[point[0] - 1, point[1] - 1] == 255)) and \
+                    ( (point[0] == 0 or point[1] == color_mask.shape[1] - 1) or (in_bounds and color_mask[point[0] - 1, point[1] + 1] != 255))  and \
+                    ( (point[0] == color_mask.shape[0] - 1 or point[1] == 0) or (in_bounds and color_mask[point[0] + 1, point[1] - 1] != 255)) and \
+                    ( (point[0] == color_mask.shape[0] - 1 or point[1] == color_mask.shape[1] - 1) or (in_bounds and color_mask[point[0] + 1, point[1] + 1] == 255))  
+                    if diag_down:
+                        delt = 0
+                        while delt <= 1:
+                            rows[round(point[0] + delt, 1)].add(point[1] + delt)
+                            delt += DELTA
+                            delt = round(delt, 1)
+
+                    # top left, bottom right -> all different color
+                    # bottom left, top right -> same colors
+                    diag_up = ( (point[0] == 0 or point[1] == 0) or (in_bounds and color_mask[point[0] - 1, point[1] - 1] != 255)) and \
+                    ( (point[0] == color_mask.shape[0] - 1 or point[1] == color_mask.shape[1] - 1) or (in_bounds and color_mask[point[0] + 1, point[1] + 1] != 255))  and \
+                    ( (point[0] == color_mask.shape[0] - 1 or point[1] == 0) or (in_bounds and color_mask[point[0] + 1, point[1] - 1] == 255))  and \
+                    ( (point[0] == 0 or point[1] == color_mask.shape[1] - 1) or (in_bounds and color_mask[point[0] - 1, point[1] + 1] == 255)) 
+                    if diag_up:
+                        delt = 0
+                        while delt <= 1:
+                            rows[round(point[0] - delt, 1)].add(point[1] + delt)
+                            delt += DELTA
+                            delt = round(delt, 1)  
+
+                    if point[0] == 0 or flat_top:
+                        delt = 0
+                        while delt <= 1:
+                            rows[point[0]].add(point[1] + delt)
+                            delt += DELTA
+                            delt = round(delt, 1)
+                    
+                    # add bottom row points
+                    if point[0] == color_mask.shape[0] - 1 or flat_bottom:
+                        delt = 0
+                        while delt <= 1:
+                            rows[point[0] + 1].add(point[1] + delt)
+                            delt += DELTA
+                            delt = round(delt, 1)
+                    
+                    # add all left row points
+                    if point[1] == 0 or flat_left:
+                        delt = 0
+                        while delt <= 1:
+                            row_value = point[0] + delt
+                            rows[row_value].add(point[1])
+                            delt += DELTA
+                            delt = round(delt, 1)
+                    
+                    # add all right row points
+                    if point[1] == color_mask.shape[1] - 1 or flat_right:
+                        delt = 0
+                        while delt <= 1:
+                            row_value = point[0] + delt
+                            rows[row_value].add(point[1] + 1)
+                            delt += DELTA
+                            delt = round(delt, 1)
+
+                shapes.append((color, rows))
+            
+            
+            intermediate = np.zeros((10 * magnified.shape[0] + 1, 10 * magnified.shape[0] + 1, 3), dtype=np.uint8)
+            
+            for ox in range(intermediate.shape[0]):
+                for oy in range(intermediate.shape[1]):
+                    
+                    mag_x = round(ox / 10, 1)
+                    shape_found = False
+                    for shape in shapes:
+                        cols_of_row = shape[1][mag_x]
+
+                        less_than = 0
+                        
+                        for col in cols_of_row:
+                            if col * 10 == oy:
+                                shape_found = True
+                                intermediate[ox, oy, :] = (255, 0, 0)
+
+            index += 1
+            cv2.imwrite("combos/mag" + str(index) + ".png", magnified)
+            cv2.imwrite("combos/combo" +str(index) +".png", intermediate)
+            
+            
+            for ox in range(output.shape[0]):
+                for oy in range(output.shape[1]):
+                    
+                    mag_x = round(ox / output.shape[0] * magnified.shape[0], 1)
+                    mag_y = oy / output.shape[1] * magnified.shape[1]
+                    shape_found = None
+                    
+                    for shape in shapes:
+                        cols_of_row = shape[1][mag_x]
+
+                        less_than = 0
+                        
+                        for col in cols_of_row:
+                            if col == mag_y:
+                                shape_found = shape[0]
+                                break
+                            if col < mag_y:
+                                less_than += 1
+                        if less_than % 2 == 1:
+                            shape_found = shape[0]
+                            break
+                        if shape_found is not None:
+                            break
+                    
+                    # fill the color based on shape
+                    if shape_found is not None:
+                        output[ox, oy, :] = shape_found
+                
+            # output[r * scale : r * scale + magnified.shape[0], c * scale : c * scale + magnified.shape[0], :] = magnified[:, :, :]
+            
     cv2.imwrite("output.png", output)
 
 
