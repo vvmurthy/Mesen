@@ -171,8 +171,17 @@ def do_nearest_naive(im, scale):
 
 
 def read_image():
-    #im = cv2.imread("testcases/smw_yoshi_input.png")
-    im = cv2.imread("testcases/win31_setup_input.png")
+    im = cv2.imread("testcases/win31_control_panel_input.png")
+    #im = cv2.imread("testcases/win31_mushroom_input.png")
+
+    max_dim = max(im.shape[0], im.shape[1])
+    im_out = np.zeros((max_dim, max_dim, 3), dtype=np.uint8)
+    if im.shape[0] == max_dim:
+        im_out[:, 0 : im.shape[1], :] = im
+    else:
+        im_out[0 : im.shape[0], :, :] = im
+    im = im_out 
+
     resized = cv2.resize(im, (im.shape[0] * 15, im.shape[1] * 15), 0, 0, cv2.INTER_NEAREST)
     im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
     cv2.imwrite("resized_nearest.png", resized)
@@ -397,111 +406,196 @@ def construct_voronoi_templates(graph, im, scale_factor):
     gr = make_graph(output_intermediate, True)
     write_graph_image(gr, output_intermediate, "intermediate_graph.png")
 
-    # determine connected components and write image
-    all_colors = np.unique(output_intermediate.reshape(-1, output_intermediate.shape[2]), axis=0)
-    shapes = [] # tuple of ((color), {row: [col_min, col_max]})
+
+    # determine connected components in graph
+    component_index = 1
+    components = np.zeros(gr.shape, dtype=np.uint32)
+
+    components_to_shapes = []
+
+    to_evaluate = [0]
+    DELTA = 0.1
+
+    current_component = None
+
+    while len(to_evaluate) > 0:
+        evall = to_evaluate.pop()
+        gr_x = evall // 1000
+        gr_y = evall % 1000
+
+        if gr[gr_x, gr_y] == 0 or components[gr_x, gr_y] != 0:
+            if len(to_evaluate) == 0:
+                rows, cols = np.where(gr != 0)
+                if len(rows) > 0:
+                    to_evaluate.append(rows[0] * 1000 + cols[0])
+            continue
     
-    for color in all_colors:
-        color_mask = np.copy(output_intermediate)
-        color_mask[output_intermediate == color] = 255
-        color_mask[output_intermediate != color] = 0
-        color_mask = color_mask[:, :, 0]
-        row_val, col_val = np.where(color_mask == 255)
+        # receive propagated component number
+        determined_component_number = 0
+        if (gr[gr_x, gr_y] & TOP_LEFT) != 0 and components[gr_x - 1, gr_y - 1] != 0:
+            determined_component_number = components[gr_x - 1, gr_y - 1]
+        elif (gr[gr_x, gr_y] & MID_LEFT) != 0 and components[gr_x, gr_y - 1] != 0:
+            determined_component_number = components[gr_x, gr_y - 1] 
+        elif (gr[gr_x, gr_y] & MID_TOP) != 0 and components[gr_x - 1, gr_y] != 0:
+            determined_component_number = components[gr_x - 1, gr_y]
+        elif (gr[gr_x, gr_y] & TOP_RIGHT) != 0 and components[gr_x - 1, gr_y + 1] != 0:
+            determined_component_number = components[gr_x - 1, gr_y + 1]
+        elif (gr[gr_x, gr_y] & BOTTOM_LEFT) != 0 and components[gr_x + 1, gr_y - 1] != 0:
+            determined_component_number = components[gr_x + 1, gr_y - 1] 
+        elif (gr[gr_x, gr_y] & BOTTOM_RIGHT) != 0 and components[gr_x + 1, gr_y + 1] != 0:
+            determined_component_number = components[gr_x + 1, gr_y + 1]
+        elif (gr[gr_x, gr_y] & BOTTOM_MID) != 0 and components[gr_x + 1, gr_y] != 0:
+            determined_component_number = components[gr_x + 1, gr_y]
+        elif (gr[gr_x, gr_y] & MID_RIGHT) != 0 and components[gr_x, gr_y + 1] != 0:
+            determined_component_number = components[gr_x, gr_y + 1]
+        
+        if determined_component_number != 0:
+            components[gr_x, gr_y] = determined_component_number
+        else:
+            if current_component is not None:
+                components_to_shapes.append(current_component)
+            current_component = (output_intermediate[gr_x, gr_y], {})
+            determined_component_number = component_index
+            components[gr_x, gr_y] = determined_component_number
+            component_index += 1
+        
+        # propagate component number to edges
+        if (gr[gr_x, gr_y] & TOP_LEFT) != 0:
+            delt = 0
+            while delt <= 0.5:
+                delt = round(delt, 1)
+                x = round(gr_x + 0.5 - delt, 1)
+                if x not in current_component[1]:
+                    current_component[1][x] = set()
+                current_component[1][x].add(gr_y + 0.5 - delt)
+                delt += DELTA
 
-        DELTA = 0.1 # so we multiply the scale by 10
-        rows = {}
-        delt = 0
-        while delt <= color_mask.shape[0]:
-            rows[delt] = set()
-            delt += DELTA
-            delt = round(delt, 1)
+            to_evaluate.append((gr_x - 1) * 1000 + (gr_y - 1))
+        
+        if (gr[gr_x, gr_y] & MID_LEFT) != 0:
+            to_evaluate.append((gr_x) * 1000 + (gr_y - 1))
 
-        for e in range(len(row_val)):
-            point = (row_val[e], col_val[e])
+            delt = 0
+            while delt <= 0.5:
+                delt = round(delt, 1)
+                y = round(gr_y + 0.5 - delt, 1)
+                x = round(gr_x + 0.5, 1)
+                if x not in current_component[1]:
+                    current_component[1][x] = set()
+                current_component[1][x].add(y)
+                delt += DELTA
 
-            # add all top row points or flat top points
-            in_bounds = point[0] > 0 and point[1] > 0 and point[0] < color_mask.shape[0] - 1 and point[1] < color_mask.shape[1] - 1
+        if (gr[gr_x, gr_y] & MID_TOP) != 0:
+            to_evaluate.append((gr_x - 1) * 1000 + (gr_y))
+
+            delt = 0
+            while delt <= 0.5:
+                delt = round(delt, 1)
+                x = round(gr_x + 0.5 - delt, 1)
+                y = round(gr_y + 0.5, 1)
+                if x not in current_component[1]:
+                    current_component[1][x] = set()
+                current_component[1][x].add(y)
+                delt += DELTA
+
+        if (gr[gr_x, gr_y] & TOP_RIGHT) != 0:
+            to_evaluate.append((gr_x - 1) * 1000 + (gr_y + 1))
+
+            delt = 0
+            while delt <= 0.5:
+                delt = round(delt, 1)
+                x = round(gr_x + 0.5 - delt, 1)
+                y = round(gr_y + 0.5 + delt, 1)
+                if x not in current_component[1]:
+                    current_component[1][x] = set()
+                current_component[1][x].add(y)
+                delt += DELTA
+
+        if (gr[gr_x, gr_y] & BOTTOM_LEFT) != 0:
+            to_evaluate.append((gr_x + 1) * 1000 + (gr_y - 1))
+
+            delt = 0
+            while delt <= 0.5:
+                delt = round(delt, 1)
+                x = round(gr_x + 0.5 + delt, 1)
+                y = round(gr_y + 0.5 - delt, 1)
+                if x not in current_component[1]:
+                    current_component[1][x] = set()
+                current_component[1][x].add(y)
+                delt += DELTA
+
+        if (gr[gr_x, gr_y] & BOTTOM_RIGHT) != 0:
+            to_evaluate.append((gr_x + 1) * 1000 + (gr_y+ 1))
+
+            delt = 0
+            while delt <= 0.5:
+                delt = round(delt, 1)
+                x = round(gr_x + 0.5 + delt, 1)
+                if x not in current_component[1]:
+                    current_component[1][x] = set()
+                current_component[1][x].add(gr_y + 0.5 + delt)
+                delt += DELTA
 
 
-            top_left_same = (point[0] == 0 or point[1] == 0 or color_mask[point[0] - 1, point[1] - 1] == 255)
-            top_mid_same = (point[0] == 0 or color_mask[point[0] -1, point[1]] == 255)
-            top_right_same = (point[0] == 0 or point[1] == color_mask.shape[1] - 1 or color_mask[point[0] - 1, point[1] + 1] == 255)
-            
-            mid_left_same = (point[1] == 0 or color_mask[point[0], point[1] - 1] == 255)
-            mid_right_same = (point[1] == color_mask.shape[1] - 1  or color_mask[point[0], point[1] + 1] == 255)
 
-            bottom_left_same = (point[0] == color_mask.shape[0] - 1  or point[1] == 0 or color_mask[point[0] + 1, point[1] - 1] == 255)
-            bottom_mid_same = (point[0] == color_mask.shape[0] - 1  or color_mask[point[0] + 1, point[1]] == 255)
-            bottom_right_same = (point[0] == color_mask.shape[0] - 1 or point[1] == color_mask.shape[1] - 1 or color_mask[point[0] - 1, point[1] + 1] == 255)
+        if (gr[gr_x, gr_y] & BOTTOM_MID) != 0:
+            to_evaluate.append((gr_x + 1) * 1000 + (gr_y))
 
-            if in_bounds and top_left_same and top_mid_same and top_right_same and mid_left_same and mid_right_same and bottom_left_same and bottom_mid_same and bottom_right_same:
-                continue
-            
-            
-            # top left, bottom right -> all same color
-            # bottom left, top right -> different colors
-            diag_down = (not mid_right_same) and (not top_right_same) and (not top_mid_same) and mid_left_same
-            if diag_down:
-                delt = 0
-                while delt <= 1:
-                    rows[round(point[0] + delt, 1)].add(point[1] + delt)
-                    delt += DELTA
-                    delt = round(delt, 1)
+            delt = 0
+            while delt <= 0.5:
+                delt = round(delt, 1)
+                x = round(gr_x + 0.5 + delt, 1)
+                y = round(gr_y + 0.5, 1)
+                if x not in current_component[1]:
+                    current_component[1][x] = set()
+                current_component[1][x].add(y)
+                delt += DELTA
 
-            # top left, bottom right -> all different color
-            # bottom left, top right -> same colors
-            diag_up = (not mid_left_same) and (not top_left_same) and not (top_mid_same) and mid_right_same
-            if diag_up:
-                delt = 0
-                while delt <= 1:
-                    rows[round(point[0] + 1 - delt, 1)].add(point[1] + delt)
-                    delt += DELTA
-                    delt = round(delt, 1)  
-            
-            flat_top = (not diag_up and not diag_down and mid_right_same and mid_left_same and bottom_mid_same and bottom_left_same and bottom_right_same and not top_mid_same)
-            
-            flat_bottom = (not diag_up and not diag_down and mid_right_same and mid_left_same and top_mid_same and top_right_same and top_left_same and not bottom_mid_same)
-            
-            flat_left = (not diag_up and not diag_down and top_right_same and mid_right_same and bottom_right_same and top_mid_same and bottom_mid_same and not mid_left_same)
-            
-            flat_right = (not diag_up and not diag_down and top_left_same and mid_left_same and bottom_left_same and top_mid_same and bottom_mid_same and not mid_right_same)
-            
+        if (gr[gr_x, gr_y] & MID_RIGHT) != 0:
+            to_evaluate.append((gr_x) * 1000 + (gr_y + 1))
 
-            if point[0] == 0 or flat_top:
-                delt = 0
-                while delt <= 1:
-                    rows[point[0]].add(point[1] + delt)
-                    delt += DELTA
-                    delt = round(delt, 1)
-            
-            # add bottom row points
-            if point[0] == color_mask.shape[0] - 1 or flat_bottom:
-                delt = 0
-                while delt <= 1:
-                    rows[point[0] + 1].add(point[1] + delt)
-                    delt += DELTA
-                    delt = round(delt, 1)
-            
-            # add all left row points
-            if point[1] == 0 or flat_left:
-                delt = 0
-                while delt <= 1:
-                    row_value = point[0] + delt
-                    rows[row_value].add(point[1])
-                    delt += DELTA
-                    delt = round(delt, 1)
-            
-            # add all right row points
-            if point[1] == color_mask.shape[1] - 1 or flat_right:
-                delt = 0
-                while delt <= 1:
-                    row_value = point[0] + delt
-                    rows[row_value].add(point[1] + 1)
-                    delt += DELTA
-                    delt = round(delt, 1)
+            delt = 0
+            while delt <= 0.5:
+                delt = round(delt, 1)
+                y = round(gr_y + 0.5 + delt, 1)
+                x = round(gr_x + 0.5, 1)
+                if x not in current_component[1]:
+                    current_component[1][x] = set()
+                current_component[1][x].add(y)
+                delt += DELTA
+        
+        gr[gr_x, gr_y] = 0
+        if len(to_evaluate) == 0:
+            rows, cols = np.where(gr != 0)
+            if len(rows) > 0:
+                    to_evaluate.append(rows[0] * 1000 + cols[0])
+        gr[gr_x, gr_y] = 0
 
-        shapes.append((color, rows))
     
+    im_out = np.zeros(output.shape, dtype=np.uint8)
+    points_polygon = []
+    for z in range(1, component_index - 1):
+        im_out[:, :, :] = 0
+        component = components_to_shapes[z - 1]
+        color = component[0]
+        verts = component[1]
+
+        num_pts = 0
+        for ky in verts.keys():
+            num_pts += len(verts[ky])
+        
+        pts = np.zeros((num_pts, 2), dtype=np.int32)
+        index = 0
+        for ky in verts.keys():
+            for y_val in verts[ky]:
+                pts[index, 0] = ky / output_intermediate.shape[0] * output.shape[0]
+                pts[index, 1] = y_val / output_intermediate.shape[1] * output.shape[1]
+                index+= 1
+        points_polygon.append((color, pts))
+
+        cv2.polylines(im_out,[pts],True,(int(color[0]), int(color[1]), int(color[2])))
+
+        cv2.imwrite("combos/component" + str(z) + ".png", im_out)
     
     intermediate = np.zeros((10 * output_intermediate.shape[0] + 1, 10 * output_intermediate.shape[0] + 1, 3), dtype=np.uint8)
     
@@ -510,7 +604,9 @@ def construct_voronoi_templates(graph, im, scale_factor):
             
             mag_x = round(ox / 10, 1)
             shape_found = False
-            for shape in shapes:
+            for shape in components_to_shapes:
+                if mag_x not in shape[1]:
+                    continue
                 cols_of_row = shape[1][mag_x]
 
                 less_than = 0
@@ -520,7 +616,7 @@ def construct_voronoi_templates(graph, im, scale_factor):
                         shape_found = True
                         intermediate[ox, oy, :] = (255, 0, 0)
             if not shape_found and ox < intermediate.shape[0] - 1 and oy < intermediate.shape[1] - 1:
-                intermediate[ox, oy, :] = output_intermediate[int(ox/10), int(oy/10)]
+                intermediate[ox, oy, :] = output_intermediate[ox // 10, oy // 10]
 
     index += 1
     cv2.imwrite("outline.png", intermediate)
@@ -529,30 +625,50 @@ def construct_voronoi_templates(graph, im, scale_factor):
     for ox in range(output.shape[0]):
         for oy in range(output.shape[1]):
             
-            mag_x = round(ox / output.shape[0] * output_intermediate.shape[0], 1)
-            mag_y = oy / output.shape[1] * output_intermediate.shape[1]
             shape_found = None
+            dist = output.shape[0]
+
+            color = None
+            for poly in points_polygon:
+                inside = cv2.pointPolygonTest(poly[1], (ox, oy), False) 
+                dist2 = abs(cv2.pointPolygonTest(poly[1], (ox, oy), True) )
             
-            for shape in shapes:
+                if inside >= 0 and dist2 < dist:
+                    
+                    color = poly[0]
+            print(ox, oy, color is not None)
+            if color is not None:
+                output[ox, oy, :] = color
+            
+            
+            """
+            for shape in components_to_shapes:
+                if mag_x not in shape[1]:
+                    continue
+
                 cols_of_row = shape[1][mag_x]
 
                 less_than = 0
-                
+                shape_dist = dist
                 for col in cols_of_row:
+                    dist2 = abs(mag_y - col)
+                    if dist2 < shape_dist:
+                        shape_dist = dist2
                     if col == mag_y:
                         shape_found = shape[0]
-                        break
+                        shape_dist = 0
                     if col < mag_y:
                         less_than += 1
-                if less_than % 2 == 1:
+                if less_than % 2 == 1 and shape_dist < dist:
                     shape_found = shape[0]
                     break
                 if shape_found is not None:
                     break
+            """
             
             # fill the color based on shape
-            if shape_found is not None:
-                output[ox, oy, :] = shape_found
+            #if shape_found is not None:
+            #    output[ox, oy, :] = shape_found
         
     
     cv2.imwrite("output.png", output)
