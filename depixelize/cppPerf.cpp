@@ -133,7 +133,7 @@ struct SquareComparator {
 
 class DepixelizeAlgorithm : public Algorithm {
 public:
-    static const int SCALE = 5;
+    static const int SCALE = 3;
 
     /**
     # bit structure
@@ -365,12 +365,12 @@ public:
 
                 int newHeight = SCALE * 2 + 1;
                 ABGR8* magnified = new ABGR8[newHeight * newHeight];
-                if(true) {
+                if(allEvaluated) {
                     for(int i = 0 ; i < newHeight * newHeight ; i++) {
                         magnified[i] = m_srcBuffer[r * srcWidth + c];
                     }
                 } else {
-                   char* known = new char[newHeight * newHeight];
+                    char* known = new char[newHeight * newHeight];
                     for(int x = 0 ; x < 3 ; x++) {
                         for(int y = 0 ; y < 3 ; y++) {
                             uint8_t value = threeByThree[x * 3 + y];
@@ -396,8 +396,8 @@ public:
                                 }
                                 if(x == 2 && y == 1) {
                                     for(int q = 2 + SCALE / 2 ; q < SCALE + 1 ; q++) {
-                                        known[(x * SCALE - q) * newHeight + y * SCALE - q] = 1;
-                                        magnified[(x * SCALE - q) * newHeight + y * SCALE - q] = m_srcBuffer[srcWidth * r + c];
+                                        known[(x * SCALE - q) * newHeight + y * SCALE] = 1;
+                                        magnified[(x * SCALE - q) * newHeight + y * SCALE] = m_srcBuffer[srcWidth * r + c];
                                     }
                                 }
                             }
@@ -409,108 +409,109 @@ public:
                                 }
                                 if(x == 2 && y == 0) {
                                     for(int q = 2 + SCALE / 2 ; q < SCALE + 1 ; q++) {
-                                        known[(x * SCALE - q) * newHeight + y * SCALE - q] = 1;
-                                        magnified[(x * SCALE - q) * newHeight + y * SCALE - q] = m_srcBuffer[srcWidth * r + c];
+                                        known[(x * SCALE - q) * newHeight + y * SCALE + q] = 1;
+                                        magnified[(x * SCALE - q) * newHeight + y * SCALE + q] = m_srcBuffer[srcWidth * r + c];
                                     }
                                 }
                             }
                             if(y > 0 && (value & MID_LEFT) != 0) 
                             {
                                 for (int q = 1; q < 1 + SCALE / 2; q++) {
-                                    known[(x * SCALE - q) * newHeight + y * SCALE] = 1;
-                                    magnified[(x * SCALE - q) * newHeight + y * SCALE] = m_srcBuffer[srcWidth * (r - 1 + x) + c - 1 + y];
+                                    known[(x * SCALE) * newHeight + y * SCALE - q] = 1;
+                                    magnified[(x * SCALE) * newHeight + y * SCALE - q] = m_srcBuffer[srcWidth * (r - 1 + x) + c - 1 + y];
                                 }
                                 if(x == 1 && y == 2) {
                                     for(int q = 2 + SCALE / 2 ; q < SCALE + 1 ; q++) {
-                                        known[(x * SCALE - q) * newHeight + y * SCALE - q] = 1;
-                                        magnified[(x * SCALE - q) * newHeight + y * SCALE - q] = m_srcBuffer[srcWidth * r + c];
+                                        known[(x * SCALE) * newHeight + y * SCALE - q] = 1;
+                                        magnified[(x * SCALE) * newHeight + y * SCALE - q] = m_srcBuffer[srcWidth * r + c];
                                     }
                                 }
                             }
                             if(y < 2 && (value & MID_RIGHT) != 0)
                             {
                                 for (int q = 1; q < 1 + SCALE / 2; q++) {
-                                    known[(x * SCALE - q) * newHeight + y * SCALE] = 1;
-                                    magnified[(x * SCALE - q) * newHeight + y * SCALE] = m_srcBuffer[srcWidth * (r - 1 + x) + c - 1 + y];
+                                    known[(x * SCALE) * newHeight + y * SCALE + q] = 1;
+                                    magnified[(x * SCALE) * newHeight + y * SCALE + q] = m_srcBuffer[srcWidth * (r - 1 + x) + c - 1 + y];
                                 }
                                 if(x == 1 && y == 0) {
                                     for(int q = 2 + SCALE / 2 ; q < SCALE + 1 ; q++) {
-                                        known[(x * SCALE - q) * newHeight + y * SCALE - q] = 1;
-                                        magnified[(x * SCALE - q) * newHeight + y * SCALE - q] = m_srcBuffer[srcWidth * r + c];
+                                        known[(x * SCALE) * newHeight + y * SCALE + q] = 1;
+                                        magnified[(x * SCALE) * newHeight + y * SCALE + q] = m_srcBuffer[srcWidth * r + c];
                                     }
                                 }
                             }
                             if(x < 2 && y > 0 && (value & BOTTOM_LEFT) != 0)
                             {
                                 for (int q = 1; q < 1 + SCALE / 2; q++) {
-                                    known[(x * SCALE - q) * newHeight + y * SCALE] = 1;
-                                    magnified[(x * SCALE - q) * newHeight + y * SCALE] = m_srcBuffer[srcWidth * (r - 1 + x) + c - 1 + y];
+                                    known[(x * SCALE + q) * newHeight + y * SCALE - q] = 1;
+                                    magnified[(x * SCALE + q) * newHeight + y * SCALE - q] = m_srcBuffer[srcWidth * (r - 1 + x) + c - 1 + y];
                                 }
                                 if(x == 0 && y == 2) {
                                     for(int q = 2 + SCALE / 2 ; q < SCALE + 1 ; q++) {
-                                        known[(x * SCALE - q) * newHeight + y * SCALE - q] = 1;
-                                        magnified[(x * SCALE - q) * newHeight + y * SCALE - q] = m_srcBuffer[srcWidth * r + c];
+                                        known[(x * SCALE + q) * newHeight + y * SCALE - q] = 1;
+                                        magnified[(x * SCALE + q) * newHeight + y * SCALE - q] = m_srcBuffer[srcWidth * r + c];
                                     }
                                 }
                             }
                             if(x < 2 && (value & BOTTOM_MID) != 0)
                             {
                                 for (int q = 1; q < 1 + SCALE / 2; q++) {
-                                    known[(x * SCALE - q) * newHeight + y * SCALE] = 1;
-                                    magnified[(x * SCALE - q) * newHeight + y * SCALE] = m_srcBuffer[srcWidth * (r - 1 + x) + c - 1 + y];
+                                    known[(x * SCALE + q) * newHeight + y * SCALE] = 1;
+                                    magnified[(x * SCALE + q) * newHeight + y * SCALE] = m_srcBuffer[srcWidth * (r - 1 + x) + c - 1 + y];
                                 }
                                 if(x == 0 && y == 1) {
                                     for(int q = 2 + SCALE / 2 ; q < SCALE + 1 ; q++) {
-                                        known[(x * SCALE - q) * newHeight + y * SCALE - q] = 1;
-                                        magnified[(x * SCALE - q) * newHeight + y * SCALE - q] = m_srcBuffer[srcWidth * r + c];
+                                        known[(x * SCALE + q) * newHeight + y * SCALE] = 1;
+                                        magnified[(x * SCALE + q) * newHeight + y * SCALE] = m_srcBuffer[srcWidth * r + c];
                                     }
                                 }
                             }
                             if(x < 2 && y < 2 && (value & BOTTOM_RIGHT) != 0)
                             {
                                 for (int q = 1; q < 1 + SCALE / 2; q++) {
-                                    known[(x * SCALE - q) * newHeight + y * SCALE] = 1;
-                                    magnified[(x * SCALE - q) * newHeight + y * SCALE] = m_srcBuffer[srcWidth * (r - 1 + x) + c - 1 + y];
+                                    known[(x * SCALE + q) * newHeight + y * SCALE + q] = 1;
+                                    magnified[(x * SCALE + q) * newHeight + y * SCALE + q] = m_srcBuffer[srcWidth * (r - 1 + x) + c - 1 + y];
                                 }
                                 if(x == 0 && y == 0) {
                                     for(int q = 2 + SCALE / 2 ; q < SCALE + 1 ; q++) {
-                                        known[(x * SCALE - q) * newHeight + y * SCALE - q] = 1;
-                                        magnified[(x * SCALE - q) * newHeight + y * SCALE - q] = m_srcBuffer[srcWidth * r + c];
-                                    }
-                                }
-                            }
-                        }
-
-                        for(int x = 0 ; x < 3 ; x++) {
-                            for(int y = 0 ; y < 3 ; y++) {
-                                if(known[x * 3 + y] == 0) {
-                                    std::vector<ABGR8> possible;
-                                    int magnitude = 100;
-                                    for(std::pair<int, int> orr : orders) {
-                                        int mag = orr.first * orr.first + orr.second * orr.second;
-                                        if(x + orr.first >= 0 && x + orr.first <= newHeight - 1
-                                            && y + orr.second >= 0 && y + orr.second <= newHeight - 1)
-                                            {
-                                                ABGR8 color = magnified[(x + orr.first) * newHeight + y + orr.second];
-                                                if(mag < magnitude) {
-                                                    possible.clear();
-                                                    possible.push_back(color);
-                                                    magnitude = mag;
-                                                } else if(mag == magnitude && std::find(possible.begin(), possible.end(), color) != possible.end()) {
-                                                    possible.push_back(color);
-                                                }
-                                            }
-                                    }
-                                    if(possible.size() == 1) {
-                                        known[x * 3 + y] = 2;
-                                        magnified[x * 3 + y] = possible[0];
-                                    } else if(possible.size() > 1) {
-                                        known[x * 3 + y] = 3;
+                                        known[(x * SCALE + q) * newHeight + y * SCALE + q] = 1;
+                                        magnified[(x * SCALE + q) * newHeight + y * SCALE + q] = src(r, c);
                                     }
                                 }
                             }
                         }
                     }
+
+                    for(int x = 0 ; x < 3 ; x++) {
+                        for(int y = 0 ; y < 3 ; y++) {
+                            if(known[x * 3 + y] == 0) {
+                                std::vector<ABGR8> possible;
+                                int magnitude = 100;
+                                for(std::pair<int, int> orr : orders) {
+                                    int mag = orr.first * orr.first + orr.second * orr.second;
+                                    if(x + orr.first >= 0 && x + orr.first <= newHeight - 1
+                                        && y + orr.second >= 0 && y + orr.second <= newHeight - 1)
+                                        {
+                                            ABGR8 color = magnified[(x + orr.first) * newHeight + y + orr.second];
+                                            if(mag < magnitude) {
+                                                possible.clear();
+                                                possible.push_back(color);
+                                                magnitude = mag;
+                                            } else if(mag == magnitude && std::find(possible.begin(), possible.end(), color) != possible.end()) {
+                                                possible.push_back(color);
+                                            }
+                                        }
+                                }
+                                if(possible.size() == 1) {
+                                    known[x * 3 + y] = 2;
+                                    magnified[x * 3 + y] = possible[0];
+                                } else if(possible.size() > 1) {
+                                    known[x * 3 + y] = 3;
+                                }
+                            }
+                        }
+                    }
+                    
                     delete known;       
                 }
                 for(int x = 0 ; x < newHeight ; x++) {
@@ -518,8 +519,6 @@ public:
                        ((ABGR8*)dst)[(srcWidth * SCALE) * (r * SCALE + x) + (c * SCALE + y)] = magnified[x * newHeight + y];
                     }
                 }
-                    
-                
 
                 delete[] magnified;
                 delete[] threeByThree;
@@ -813,7 +812,7 @@ public:
 
 void runAllCPPPerfTests() {
     const String FILENAME = "test-512.png";
-    const int NUM_ITERATIONS = 60;
+    const int NUM_ITERATIONS = 6;
 
     // Load the test image
     const shared_ptr<Image>& image = Image::fromFile(FilePath::concat("../test-data", FILENAME));
@@ -846,16 +845,16 @@ void runAllCPPPerfTests() {
     for (Algorithm* algorithm : algorithmArray) {
         if(algorithm->name() == "Depixel") {
             algorithm->run(src, dstDepixel, srcWidth, srcHeight);
-            #ifdef SAVE_OUTPUT
-                    const shared_ptr<Image>& dest_image = Image::fromPixelTransferBuffer(dstBufferDepixel);
-                    dest_image->save(( "results/" + algorithm->name() + "-out.png").c_str());
-            #endif
+            
+            const shared_ptr<Image>& dest_image = Image::fromPixelTransferBuffer(dstBufferDepixel);
+            dest_image->save(( "results/" + algorithm->name() + "-out.png").c_str());
+            
         } else {
             algorithm->run(src, dst, srcWidth, srcHeight);
-            #ifdef SAVE_OUTPUT
-                const shared_ptr<Image>& dest_image = Image::fromPixelTransferBuffer(dstBuffer);
-                dest_image->save(( "results/" + algorithm->name() + "-out.png").c_str());
-            #endif
+            
+            const shared_ptr<Image>& dest_image = Image::fromPixelTransferBuffer(dstBuffer);
+            dest_image->save(( "results/" + algorithm->name() + "-out.png").c_str());
+            
         }
         
 
